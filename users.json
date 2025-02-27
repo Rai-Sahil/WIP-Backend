@@ -1,0 +1,7 @@
+{
+  "students": [
+    { "username": "john_doe", "password": "1234" },
+    { "username": "jane_doe", "password": "5678" }
+  ]
+}
+
