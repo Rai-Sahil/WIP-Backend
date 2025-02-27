@@ -39,7 +39,6 @@ if (fs.existsSync(questionsPath)) {
         questions.push({ Id: Id.trim(), Question: Question.trim(), Answer: Answer.trim(), OptionA: OptionA.trim(), OptionB: OptionB.trim(), OptionC: OptionC.trim(), OptionD: OptionD.trim()});
       }
     });
-  console.log(questions)
   console.log("✅ Questions loaded.");
 } else {
   console.error("❌ Error: questions.csv not found.");
