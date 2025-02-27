@@ -34,11 +34,12 @@ if (fs.existsSync(questionsPath)) {
     .split("\n")
     .slice(1) // Skip CSV header
     .forEach((line) => {
-      const [Id, Question, Answer] = line.split(",");
+      const [Id, Question, Answer, OptionA, OptionB, OptionC, OptionD] = line.split(",");
       if (Id && Question && Answer) {
-        questions.push({ Id: Id.trim(), Question: Question.trim(), Answer: Answer.trim() });
+        questions.push({ Id: Id.trim(), Question: Question.trim(), Answer: Answer.trim(), OptionA: OptionA.trim(), OptionB: OptionB.trim(), OptionC: OptionC.trim(), OptionD: OptionD.trim()});
       }
     });
+  console.log(questions)
   console.log("✅ Questions loaded.");
 } else {
   console.error("❌ Error: questions.csv not found.");
