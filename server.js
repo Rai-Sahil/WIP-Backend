@@ -4,7 +4,8 @@ const cors = require("cors");
 const fs = require("fs");
 const csv = require("csv-parser");
 const { OpenAI } = require("openai");
-const { Parser } = require("json2csv"); 
+const { Parser } = require("json2csv");
+const path = require("path");
 
 const app = express();
 app.use(express.json());
@@ -17,24 +18,40 @@ let students = {};
 let studentScores = {};
 let studentAIUsage = {};
 
-// Load CSV questions
-fs.createReadStream("./questions.csv")
-  .pipe(csv())
-  .on("data", (row) => questions.push(row))
-  .on("end", () => console.log("Questions loaded."));
+// ✅ Load Questions Synchronously
+const questionsPath = path.join(__dirname, "public", "questions.csv");
+if (fs.existsSync(questionsPath)) {
+  const fileContent = fs.readFileSync(questionsPath, "utf8");
+  fileContent
+    .split("\n")
+    .slice(1) // Skip CSV header
+    .forEach((line) => {
+      const [Id, Question, Answer] = line.split(",");
+      if (Id && Question && Answer) {
+        questions.push({ Id: Id.trim(), Question: Question.trim(), Answer: Answer.trim() });
+      }
+    });
+  console.log("✅ Questions loaded.");
+} else {
+  console.error("❌ Error: questions.csv not found.");
+}
 
-// Load Students
-fs.readFile("./users.json", (err, data) => {
-  if (!err) students = JSON.parse(data);
-});
+// ✅ Load Users Synchronously
+const usersPath = path.join(__dirname, "public", "users.json");
+if (fs.existsSync(usersPath)) {
+  students = JSON.parse(fs.readFileSync(usersPath, "utf8"));
+  console.log("✅ Users loaded.");
+} else {
+  console.error("❌ Error: users.json not found.");
+}
 
-// ✅ Student Login (No Tokens, Just Simple Validation)
+// ✅ Student Login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
   const student = students.students.find((u) => u.username === username && u.password === password);
   if (student) {
     studentScores[username] = 0;
-    studentAIUsage[username] = { questionsUsed: 0, promptsLeft: {} };
+    studentAIUsage[username] = { questionsUsed: 0, questions: {} };
     res.json({ success: true, username });
   } else {
     res.status(401).json({ success: false, message: "Invalid credentials" });
@@ -55,12 +72,12 @@ app.post("/submit", (req, res) => {
   }
 
   let score = 0;
-  studentScores[username] = {}; // Store individual answers
+  studentScores[username] = {};
 
   questions.forEach((q) => {
     const userAnswer = answers[q.Id] || "Not Answered";
-    studentScores[username][q.Id] = userAnswer; // Save answer
-    
+    studentScores[username][q.Id] = userAnswer;
+
     if (userAnswer === q.Answer) {
       score += 1;
     }
@@ -74,37 +91,35 @@ app.post("/ai-help", async (req, res) => {
   const { username, question, userQuestion } = req.body;
 
   if (!studentAIUsage[username]) {
-    studentAIUsage[username] = { questionsUsed: 0, promptsLeft: {} };
+    studentAIUsage[username] = { questionsUsed: 0, questions: {} };
   }
 
   const aiUsage = studentAIUsage[username];
 
-  // Check if the maximum number of questions has been used
-  if (aiUsage.questionsUsed >= 3) {
-    return res.status(403).json({ success: false, message: "AI help used for max 3 questions" });
+  // Check AI usage limits
+  if (aiUsage.questionsUsed >= 3 && !aiUsage.questions[question]) {
+    return res.status(403).json({ success: false, message: "AI help allowed for only 3 questions." });
   }
 
-  // Initialize prompts left for the question
-  if (!aiUsage.promptsLeft[question]) {
-    aiUsage.promptsLeft[question] = 3;
+  if (!aiUsage.questions[question]) {
+    aiUsage.questions[question] = { promptsLeft: 3 };
+    aiUsage.questionsUsed += 1;
   }
 
-  // Check if prompts are exhausted for the question
-  if (aiUsage.promptsLeft[question] === 0) {
-    aiUsage.questionsUsed += 1; // Increment question usage only when prompts are exhausted
-    return res.status(403).json({ success: false, message: "No more AI prompts for this question" });
+  if (aiUsage.questions[question].promptsLeft === 0) {
+    return res.status(403).json({ success: false, message: "No more AI prompts for this question." });
   }
-  
+
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: "You are a Teaching Assistant. Give hints, but NEVER the answer." },
-        { role: "user", content: `Give me a hint for this question: ${question} My query about this question is ${userQuestion}` }
+        { role: "user", content: `Give me a hint for this question: ${question}. My query: ${userQuestion}` }
       ]
     });
 
-    aiUsage.promptsLeft[question] -= 1; // Decrement the number of prompts left for the specific question
+    aiUsage.questions[question].promptsLeft -= 1;
     res.json({ success: true, hint: response.choices[0].message.content });
   } catch (error) {
     res.status(500).json({ success: false, message: "AI error" });
@@ -117,23 +132,22 @@ app.get("/score/:username", (req, res) => {
   res.json({ success: true, score: studentScores[username] || 0 });
 });
 
-// Download CSV Report
+// ✅ Download CSV Report
 app.get("/download-report", (_, res) => {
   const csvData = [];
 
   Object.keys(studentScores).forEach((username) => {
     const userAnswers = studentScores[username] || {};
-    const aiUsage = studentAIUsage[username] || { questionsUsed: 0, promptsLeft: {} };
+    const aiUsage = studentAIUsage[username] || { questionsUsed: 0, questions: {} };
 
     questions.forEach((q) => {
       const userAnswer = userAnswers[q.Id] || "Not Answered";
-      console.log(studentScores);
       const isCorrect = userAnswer === q.Answer ? "Correct" : "Wrong";
-      const aiHintsUsed = aiUsage.promptsLeft[q[" Question"]] ? 3 - aiUsage.promptsLeft[q[" Question"]] : 0;
+      const aiHintsUsed = aiUsage.questions[q.Question] ? 3 - aiUsage.questions[q.Question].promptsLeft : 0;
 
       csvData.push({
         Username: username,
-        Question: q[" Question"],
+        Question: q.Question,
         CorrectAnswer: q.Answer,
         UserAnswer: userAnswer,
         Result: isCorrect,
@@ -146,10 +160,10 @@ app.get("/download-report", (_, res) => {
   const csv = parser.parse(csvData);
 
   res.header("Content-Type", "text/csv");
-  res.attachment("quiz_report.csv")
+  res.attachment("quiz_report.csv");
   res.send(csv);
-})
+});
 
 // ✅ Start Server
-app.listen(3000, () => console.log("Server running on port 3000"));
+app.listen(3000, () => console.log("🚀 Server running on port 3000"));
 
