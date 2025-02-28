@@ -25,6 +25,13 @@ let students = {};
 let studentScores = {};
 let studentAIUsage = {};
 
+app.use(express.static(path.join(__dirname, "public"))); // Serve frontend files
+
+// Catch-all route to handle frontend routing (important for React/Vue)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 // ✅ Load Questions Synchronously
 const questionsPath = path.join(__dirname, "public", "questions.csv");
 if (fs.existsSync(questionsPath)) {
