@@ -137,6 +137,20 @@ app.post("/ai-help", async (req, res) => {
   }
 });
 
+// ✅ Get AI usage data for a user
+app.get("/ai-usage/:username", (req, res) => {
+  const { username } = req.params;
+  const aiUsage = studentAIUsage[username] || { questionsUsed: 0, questions: {} };
+
+  // Format data for the frontend
+  const usageData = Object.keys(aiUsage.questions).map((questionId) => ({
+    id: questionId,
+    hintsLeft: aiUsage.questions[questionId].promptsLeft,
+  }));
+
+  res.json(usageData);
+});
+
 // ✅ Get Student Score
 app.get("/score/:username", (req, res) => {
   const username = req.params.username;
