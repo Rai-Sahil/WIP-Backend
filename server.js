@@ -11,12 +11,14 @@ const app = express();
 app.use(express.json());
 
 const corsOptions = {
-  origin: "*", // Allows requests from ANY frontend
+  origin: "*",
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   allowedHeaders: "Content-Type,Authorization"
 };
 
 app.use(cors(corsOptions));
+
+app.use(express.static(path.join(__dirname, "public"))); // Serve frontend files
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -24,13 +26,6 @@ let questions = [];
 let students = {};
 let studentScores = {};
 let studentAIUsage = {};
-
-app.use(express.static(path.join(__dirname, "public"))); // Serve frontend files
-
-// Catch-all route to handle frontend routing (important for React/Vue)
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
 
 // ✅ Load Questions Synchronously
 const questionsPath = path.join(__dirname, "public", "questions.csv");
