@@ -1,11 +1,11 @@
 Id, Question,OptionA,OptionB,OptionC,OptionD,Answer
-0, "What is the size of an int in C?", "2 bytes", "4 bytes", "8 bytes", "Depends on compiler", "Depends on compiler"
-1, "Which of the following is a valid C variable name?", "1variable", "_variable", "var-name", "char", "_variable"
-2, "What is the output of printf(\"%d\", 10+20);", "10", "20", "30", "Compilation Error", "30"
-3, "What is the correct syntax to declare a pointer?", "int ptr;", "int *ptr;", "ptr int;", "pointer int;", "int *ptr;"
-4, "What header file is required for printf() function?", "stdio.h", "stdlib.h", "conio.h", "math.h", "stdio.h"
-5, "Which loop is guaranteed to execute at least once?", "for", "while", "do-while", "None", "do-while"
-6, "What is the correct way to allocate memory dynamically?", "malloc(size)", "alloc(size)", "new(size)", "memory(size)", "malloc(size)"
-7, "What will happen if you access an array out of bounds?", "Segmentation Fault", "Compiler Error", "Runtime Warning", "Nothing", "Segmentation Fault"
-8, "Which operator is used to access structure members?", ".", "->", "::", "*", "."
-9, "Which function is used to compare two strings?", "strcmp()", "strcomp()", "compare()", "cmpstr()", "strcmp()"
+0, What is the size of an int in C?, 2 bytes, 4 bytes, 8 bytes, Depends on compiler, Depends on compiler
+1, Which of the following is a valid C variable name?, 1variable, _variable, var-name, char, _variable
+2, What is the output of printf(\"%d\", 10+20);, 10, 20, 30, Compilation Error, 30
+3, What is the correct syntax to declare a pointer?, int ptr;, int *ptr;, ptr int;, pointer int;, int *ptr;
+4, What header file is required for printf() function?, stdio.h, stdlib.h, conio.h, math.h, stdio.h
+5, Which loop is guaranteed to execute at least once?, for, while, do-while, None, do-while
+6, What is the correct way to allocate memory dynamically?, malloc(size), alloc(size), new(size), memory(size), malloc(size)
+7, What will happen if you access an array out of bounds?, Segmentation Fault, Compiler Error, Runtime Warning, Nothing, Segmentation Fault
+8, Which operator is used to access structure members?, ., ->, ::, *, .
+9, Which function is used to compare two strings?, strcmp(), strcomp(), compare(), cmpstr(), strcmp()
