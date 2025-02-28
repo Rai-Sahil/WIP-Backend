@@ -109,9 +109,17 @@ app.post("/ai-help", async (req, res) => {
 
   const aiUsage = studentAIUsage[username];
 
+  if (aiUsage.questionsUsed === 3 && aiUsage.questions[question].promptsLeft > 0) {
+    // Should work
+  }
+
   // ❌ Fix: Prevent Reset
   if (aiUsage.questionsUsed >= 3) {
-    return res.status(403).json({ success: false, message: "AI help limit reached (3 questions max)." });
+    if (aiUsage.questionsUsed > 3) return res.status(403).json({ success: false, message: "AI help limit reached (3 questions max)." });
+
+    if (aiUsage.questionsUsed === 3 && aiUsage.questions[question].promptsLeft === 0) {
+      return res.status(403).json({ success: false, message: "AI help limit reached (3 questions max)." });
+    }
   }
 
   if (!aiUsage.questions[question]) {
