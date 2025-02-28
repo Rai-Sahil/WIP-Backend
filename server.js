@@ -107,9 +107,9 @@ app.post("/ai-help", async (req, res) => {
 
   const aiUsage = studentAIUsage[username];
 
-  // Check AI usage limits
-  if (aiUsage.questionsUsed >= 3 && !aiUsage.questions[question]) {
-    return res.status(403).json({ success: false, message: "AI help allowed for only 3 questions." });
+  // ❌ Fix: Prevent Reset
+  if (aiUsage.questionsUsed >= 3) {
+    return res.status(403).json({ success: false, message: "AI help limit reached (3 questions max)." });
   }
 
   if (!aiUsage.questions[question]) {
@@ -131,24 +131,11 @@ app.post("/ai-help", async (req, res) => {
     });
 
     aiUsage.questions[question].promptsLeft -= 1;
+
     res.json({ success: true, hint: response.choices[0].message.content });
   } catch (error) {
     res.status(500).json({ success: false, message: "AI error" });
   }
-});
-
-// ✅ Get AI usage data for a user
-app.get("/ai-usage/:username", (req, res) => {
-  const { username } = req.params;
-  const aiUsage = studentAIUsage[username] || { questionsUsed: 0, questions: {} };
-
-  // Format data for the frontend
-  const usageData = Object.keys(aiUsage.questions).map((questionId) => ({
-    id: questionId,
-    hintsLeft: aiUsage.questions[questionId].promptsLeft,
-  }));
-
-  res.json(usageData);
 });
 
 // ✅ Get Student Score
