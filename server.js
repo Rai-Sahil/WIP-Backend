@@ -16,7 +16,6 @@ const corsOptions = {
   allowedHeaders: "Content-Type,Authorization"
 };
 
-
 app.use(cors(corsOptions));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -58,8 +57,12 @@ app.post("/login", (req, res) => {
   const { username, password } = req.body;
   const student = students.students.find((u) => u.username === username && u.password === password);
   if (student) {
-    studentScores[username] = 0;
-    studentAIUsage[username] = { questionsUsed: 0, questions: {} };
+    if (!studentScores[username]) {
+      studentScores[username] = 0;
+    }
+    if (!studentAIUsage[username]) {
+      studentAIUsage[username] = { questionsUsed: 0, questions: {} };
+    }
     res.json({ success: true, username });
   } else {
     res.status(401).json({ success: false, message: "Invalid credentials" });
