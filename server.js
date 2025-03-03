@@ -17,8 +17,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-app.use(express.static(path.join(__dirname, "public"))); // Serve frontend files
+app.use(express.static(path.join(__dirname, "public")));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
