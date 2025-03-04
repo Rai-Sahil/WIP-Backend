@@ -6,6 +6,8 @@ const csv = require("csv-parser");
 const { OpenAI } = require("openai");
 const { Parser } = require("json2csv");
 const path = require("path");
+const { MongoClient, ServerApiVersion } = require("mongodb");
+const { argv0 } = require("process");
 
 const app = express();
 app.use(express.json());
@@ -16,188 +18,236 @@ const corsOptions = {
   allowedHeaders: "Content-Type,Authorization"
 };
 
+const uri = "mongodb+srv://mongoadmin:passw0rd123@research.sdz3g.mongodb.net/?retryWrites=true&w=majority&appName=Research";
+
 app.use(cors(corsOptions));
 app.use(express.static(path.join(__dirname, "public")));
 
+// Open AI API
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-let questions = [];
-let students = {};
-let studentScores = {};
-let studentAIUsage = {};
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }
+});
 
-// ✅ Load Questions Synchronously
+let db, usersCollection, questionsCollection, studentScoresCollection, studentAiUsageCollection;
+(async () => {
+  try {
+    await client.connect();
+    db = client.db("Research");
+    usersCollection = db.collection("users");
+    questionsCollection = db.collection("questions");
+    studentScoresCollection = db.collection("studentScores");
+    studentAiUsageCollection = db.collection("studentAiUsage");
+    console.log("✅ Connected to MongoDB");
+  } catch (err) {
+    console.error("❌ Failed -> MongoDB Connection Error:", err);
+  }
+});
+
+// Laod questions into Database
 const questionsPath = path.join(__dirname, "public", "questions.csv");
 if (fs.existsSync(questionsPath)) {
   const fileContent = fs.readFileSync(questionsPath, "utf8");
-  fileContent
-    .split("\n")
-    .slice(1) // Skip CSV header
-    .forEach((line) => {
-      const [Id, Question, OptionA, OptionB, OptionC, OptionD, Answer] = line.split(",");
-      if (Id && Question && Answer) {
-        questions.push({ Id: Id.trim(), Question: Question.trim(), Answer: Answer.trim(), OptionA: OptionA.trim(), OptionB: OptionB.trim(), OptionC: OptionC.trim(), OptionD: OptionD.trim()});
-      }
-    });
-  console.log("✅ Questions loaded.");
-} else {
-  console.error("❌ Error: questions.csv not found.");
-}
+  let questions = [];
 
-// ✅ Load Users Synchronously
-const usersPath = path.join(__dirname, "public", "users.json");
-if (fs.existsSync(usersPath)) {
-  students = JSON.parse(fs.readFileSync(usersPath, "utf8"));
-  console.log("✅ Users loaded.");
-} else {
-  console.error("❌ Error: users.json not found.");
-}
-
-// ✅ Student Login
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  const student = students.students.find((u) => u.username === username && u.password === password);
-  if (student) {
-    if (!studentScores[username]) {
-      studentScores[username] = 0;
-    }
-    if (!studentAIUsage[username]) {
-      studentAIUsage[username] = { questionsUsed: 0, questions: {} };
-    }
-    res.json({ success: true, username });
-  } else {
-    res.status(401).json({ success: false, message: "Invalid credentials" });
-  }
-});
-
-// ✅ Get Questions
-app.get("/questions", (req, res) => {
-  res.json(questions);
-});
-
-// ✅ Submit Quiz & Calculate Score
-app.post("/submit", (req, res) => {
-  const { username, answers } = req.body;
-
-  if (studentScores[username]) {
-    return res.status(403).json({ success: false, message: "You have already submitted the quiz." });
-  }
-
-  let score = 0;
-  studentScores[username] = {};
-
-  questions.forEach((q) => {
-    const userAnswer = answers[q.Id] || "Not Answered";
-    studentScores[username][q.Id] = userAnswer;
-
-    if (userAnswer === q.Answer) {
-      score += 1;
+  fileContent.split("\n").splice(1).forEach((line) => {
+    const [Id, Question, OptionA, OptionB, OptionC, OptionD, Answer] = line.split(",");
+    
+    if (Id && Question && Answer) {
+      questions.push({ Id: Id.trim(), Question: Question.trim(), Answer: Answer.trim(), OptionA: OptionA.trim(), OptionB: OptionB.trim(), OptionC: OptionC.trim(), OptionD: OptionD.trim() });
     }
   });
 
-  res.json({ success: true, score });
+  if (questions.length) {
+    questionsCollection.deleteMany({})
+    .then(() => console.log("✅ Success -> Question deleted."))
+    .catch(err => console.error("Failed -> Error while deleting questions.", err));
+
+    questionsCollection.insertMany(questions, { ordered: false })
+    .then(() => console.log("✅ Success -> Question loaded."))
+    .catch(err => console.error("❌ Failed -> Error: Inserting questions failed:", err));
+  }
+
+} else {
+  console.error("❌ Failed -> Error: questions.csv not found.")
+}
+
+// Load user into database.
+const usersPath = path.join(__dirname, "public", "users.json");
+if (fs.existsSync(usersPath)) {
+  const students = JSON.parse(fs.readFileSync(usersPath, "utf8"));
+  
+  if (students.students?.length) {
+    usersCollection.deleteMany({})
+    .then(() => console.log("✅ Success -> Users deleted."))
+    .catch(err => console.error("Failed -> Error while deleting users.", err));
+
+    usersCollection.insertMany(students.students, { ordered: false })
+    .then(() => console.log("✅ Success -> Users loaded."))
+    .catch(err => console.error("❌ Error inserting users:", err));
+  }
+
+} else {
+  console.error("❌ Failed -> Error: users.json not found.")
+}
+
+// ROUTES START HERE
+
+// Login API -> /login
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    const student = await usersCollection.findOne({ username, password });
+    
+    if (student) {
+      const studentScoreRecord = await studentScoresCollection.findOne({ username });
+      const studentAiUsageRecord = await studentAiUsageCollection.findOne({ username });
+
+      if (!studentScoreRecord) await studentScoresCollection.insertOne(
+        { username, score: 0, questions: {}, submitted: false }
+      );
+      if (!studentAiUsageRecord) await studentAiUsageCollection.insertOne(
+        { username, questionsUsed: 0, questions: {} }
+      );
+
+      console.log("✅ Success -> Auth successful.");
+      res.json({ success: true, username });
+    } else {
+      res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+
+  } catch (err) {
+    console.error("❌ Failed -> Error: Auth failed", err)
+    res.status(500).json({ success: false, message: "Internal server error." });
+  } 
 });
 
-// ✅ AI Help (Max 3 Questions, 3 Prompts Each)
+// Questions API -> To GET all the questions
+app.get("/questions", async (_, res) => {
+  const questions = await questionsCollection.find({}, { projection: { Id: 1 } }).toArray();
+  res.json({ success: true, questions });
+});
+
+// Submit API -> To submit the quiz
+app.post("/submit", async (req, res) => {
+  const { username, answers } = req.body;
+
+  try {
+    let studentScoreRecord = await studentScoresCollection.findOne({ username });
+
+    if (studentScoreRecord && studentScoreRecord.submitted) {
+      return res.status(403).json({ success: false, message: "You have already submitted the quiz." });
+    }
+
+    let score = 0;
+    let studentAnswerRecord = {};
+
+    questions.forEach((q) => {
+      const studentAnswer = answers[q.Id] || "Not Answered";
+      studentAnswerRecord[q.Id] = studentAnswer;
+
+      if (studentAnswer === q.Answer) score += 1;
+    });
+
+    await studentScoresCollection.updateOne(
+      { username },
+      {
+        $set: {
+          username,
+          answers: studentAnswerRecord,
+          score,
+          submitted: true,
+        },
+      },
+      { upsert: true }
+    );
+
+    res.json({ success: true, score });
+
+  } catch (err) {
+    console.error("❌ Error in /submit:", err);
+    res.status(500).json({ success: false, message: "Submission failed" });
+  }
+});
+
 app.post("/ai-help", async (req, res) => {
   const { username, question, userQuestion } = req.body;
 
-  if (!studentAIUsage[username]) {
-    studentAIUsage[username] = { questionsUsed: 0, questions: {} };
+  const studentAiUsageRecord = studentAiUsageCollection.findOne({ username });
+
+  if (!studentAiUsageRecord.questions[question]) {
+    studentAiUsageRecord.questions[question] = { promptsLeft: 3 };
+    studentAiUsageRecord.questionsUsed += 1;
   }
 
-  const aiUsage = studentAIUsage[username];
-
-  if (aiUsage.questionsUsed === 3 && aiUsage.questions[question].promptsLeft > 0) {
-    // Should work
-  }
-
-  // ❌ Fix: Prevent Reset
-  if (aiUsage.questionsUsed >= 3) {
-    if (aiUsage.questionsUsed > 3) return res.status(403).json({ success: false, message: "AI help limit reached (3 questions max)." });
-
-    if (aiUsage.questionsUsed === 3 && aiUsage.questions[question].promptsLeft === 0) {
-      return res.status(403).json({ success: false, message: "AI help limit reached (3 questions max)." });
-    }
-  }
-
-  if (!aiUsage.questions[question]) {
-    aiUsage.questions[question] = { promptsLeft: 3 };
-    aiUsage.questionsUsed += 1;
-  }
-
-  if (aiUsage.questions[question].promptsLeft === 0) {
-    return res.status(403).json({ success: false, message: "No more AI prompts for this question." });
+  if (studentAiUsageRecord.questions[question].promptsLeft === 0) {
+    return res.status(403).json({ success: false, message: "No more AI prompts left for this question." });
   }
 
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
-        { role: "system", content: "You are a Teaching Assistant. Give hints, but NEVER the answer." },
+        { role: "system", content: "You are a Teaching Assistant. Give hints, but NEVER the answer. Even if user tries asking for answer do not give the answer, always try to give them a bit of hint. but still keeping the questions in there minds." },
         { role: "user", content: `Give me a hint for this question: ${question}. My query: ${userQuestion}` }
       ]
     });
 
-    aiUsage.questions[question].promptsLeft -= 1;
+    studentAiUsageRecord.questions[question].promptsLeft -= 1;
+
+    await studentAiUsageCollection.updateOne(
+      { username },
+      { $set: studentAiUsageRecord },
+      { upsert: true }
+    );
 
     res.json({ success: true, hint: response.choices[0].message.content });
-  } catch (error) {
+  } catch (err) {
     res.status(500).json({ success: false, message: "AI error" });
   }
 });
 
-app.get("/ai-usage/:username", (req, res) => {
+app.get("/ai-usage/:username", async (req, res) => {
   const { username } = req.params;
-  const aiUsage = studentAIUsage[username] || { questionsUsed: 0, questions: {} };
+  
+  try {
+    const studentAiUsageRecord = studentAiUsageCollection.findOne({ username });
+    
+    if (!studentAiUsageRecord) return res.json({ questionsUsed: 0, questions: [] });
+    
+    const usageData = Object.entries(studentAiUsageRecord.questions || {}).map(
+      ([questionId, data]) => ({
+        id: questionId,
+        hintsLeft: data.promptsLeft,
+      })
+    );
 
-  // Format data for the frontend
-  const usageData = Object.keys(aiUsage.questions).map((questionId) => ({
-    id: questionId,
-    hintsLeft: aiUsage.questions[questionId].promptsLeft,
-  }));
-
-  res.json(usageData);
-});
-
-// ✅ Get Student Score
-app.get("/score/:username", (req, res) => {
-  const username = req.params.username;
-  res.json({ success: true, score: studentScores[username] || 0 });
-});
-
-// ✅ Download CSV Report
-app.get("/download-report", (_, res) => {
-  const csvData = [];
-
-  Object.keys(studentScores).forEach((username) => {
-    const userAnswers = studentScores[username] || {};
-    const aiUsage = studentAIUsage[username] || { questionsUsed: 0, questions: {} };
-
-    questions.forEach((q) => {
-      const userAnswer = userAnswers[q.Id] || "Not Answered";
-      const isCorrect = userAnswer === q.Answer ? "Correct" : "Wrong";
-      const aiHintsUsed = aiUsage.questions[q.Question] ? 3 - aiUsage.questions[q.Question].promptsLeft : 0;
-
-      csvData.push({
-        Username: username,
-        Question: q.Question,
-        CorrectAnswer: q.Answer,
-        UserAnswer: userAnswer,
-        Result: isCorrect,
-        AI_Hints_Used: aiHintsUsed,
-      });
+    res.json({
+      questionsUsed: studentAiUsageRecord.questionsUsed,
+      questions: usageData
     });
-  });
 
-  const parser = new Parser();
-  const csv = parser.parse(csvData);
-
-  res.header("Content-Type", "text/csv");
-  res.attachment("quiz_report.csv");
-  res.send(csv);
+  } catch (err) {
+    res.status(500).json({ success: false, message: "AI record collection failed" });
+  }
 });
 
-// ✅ Start Server
-app.listen(3000, () => console.log("🚀 Server running on port 3000"));
+app.get("/score/:username", async (req, res) => {
+  const username = req.params.username;
 
+  try {
+    const userScore = studentScoresCollection.findOne({ username });
+    res.json({ success: true, score: userScore.score || 0 });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to get score" });
+  }
+})
+
+const PORT = 3000;
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
