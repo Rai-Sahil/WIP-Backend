@@ -7,7 +7,6 @@ const { OpenAI } = require("openai");
 const { Parser } = require("json2csv");
 const path = require("path");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const { argv0 } = require("process");
 
 const app = express();
 app.use(express.json());
@@ -35,10 +34,11 @@ const client = new MongoClient(uri, {
 });
 
 let db, usersCollection, questionsCollection, studentScoresCollection, studentAiUsageCollection;
-(async () => {
+
+async function StartUpMongo() {
   try {
-    await client.connect();
-    console.log("✅ Connected to MongoDB");
+    await client.connect().then(() => console.log("Done")).catch((err) => console.error("Error", err))
+    console.log("✅ Connected to MongoDB"); 
     db = client.db("Research");
     usersCollection = db.collection("users");
     questionsCollection = db.collection("questions");
@@ -51,7 +51,7 @@ let db, usersCollection, questionsCollection, studentScoresCollection, studentAi
   } catch (err) {
     console.error("❌ Failed -> MongoDB Connection Error:", err);
   }
-});
+}
 
 // Laod questions into Database
 async function LoadQuestions() {
@@ -109,15 +109,24 @@ async function LoadUsers() {
 
 }
 // ROUTES START HERE
+app.get("/start-up", async (_, res) => {
+  try {
+    await StartUpMongo();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+})
 
 // Login API -> /login
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const student = await usersCollection.findOne({ username, password });
-    
-    if (student) {
+    const student = await usersCollection.findOne({ username });
+    const count = await usersCollection.countDocuments();
+    console.log(count)
+    if (student && student.password == password) {
       const studentScoreRecord = await studentScoresCollection.findOne({ username });
       const studentAiUsageRecord = await studentAiUsageCollection.findOne({ username });
 
