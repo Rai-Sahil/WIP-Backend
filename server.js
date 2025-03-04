@@ -199,9 +199,7 @@ app.post("/submit", async (req, res) => {
 
 app.post("/ai-help", async (req, res) => {
   const { username, question, userQuestion } = req.body;
-
-  const studentAiUsageRecord = studentAiUsageCollection.findOne({ username });
-
+  const studentAiUsageRecord = await studentAiUsageCollection.findOne({ username });
   if (!studentAiUsageRecord.questions[question]) {
     studentAiUsageRecord.questions[question] = { promptsLeft: 3 };
     studentAiUsageRecord.questionsUsed += 1;
