@@ -119,22 +119,26 @@ app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const student = await usersCollection.findOne({ username });
     const count = await usersCollection.countDocuments();
+    const student = await usersCollection.findOne({ username });
     console.log(username, password)
-    if (student && student.password === password) {
-      const studentScoreRecord = await studentScoresCollection.findOne({ username });
-      const studentAiUsageRecord = await studentAiUsageCollection.findOne({ username });
+    if (student) {
 
-      if (!studentScoreRecord) await studentScoresCollection.insertOne(
-        { username, score: 0, questions: {}, submitted: false }
-      );
-      if (!studentAiUsageRecord) await studentAiUsageCollection.insertOne(
-        { username, questionsUsed: 0, questions: {} }
-      );
+      if (student.password === password) {
 
-      console.log("✅ Success -> Auth successful.");
-      res.json({ success: true, username });
+        const studentScoreRecord = await studentScoresCollection.findOne({ username });
+        const studentAiUsageRecord = await studentAiUsageCollection.findOne({ username });
+
+        if (!studentScoreRecord) await studentScoresCollection.insertOne(
+          { username, score: 0, questions: {}, submitted: false }
+        );
+        if (!studentAiUsageRecord) await studentAiUsageCollection.insertOne(
+          { username, questionsUsed: 0, questions: {} }
+        );
+
+        console.log("✅ Success -> Auth successful.");
+        res.json({ success: true, username });
+      }
     } else {
       res.status(401).json({ success: false, message: "Invalid credentials" });
     }
