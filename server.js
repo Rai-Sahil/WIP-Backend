@@ -90,13 +90,13 @@ async function LoadUsers() {
     const students = JSON.parse(fs.readFileSync(usersPath, "utf8"));
 
     if (students.students?.length) {
-      usersCollection.deleteMany({})
-        .then(() => console.log("✅ Success -> Users deleted."))
-        .catch(err => console.error("Failed -> Error while deleting users.", err));
+      const studentCount = usersCollection.countDocuments();
 
-      usersCollection.insertMany(students.students, { ordered: false })
+      if (studentCount == 0) {
+        await usersCollection.insertMany(students.students, { ordered: false })
         .then(() => console.log("✅ Success -> Users loaded."))
         .catch(err => console.error("❌ Error inserting users:", err));
+      }
     }
 
   } else {
