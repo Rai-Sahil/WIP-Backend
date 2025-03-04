@@ -71,15 +71,11 @@ async function LoadQuestions() {
     if (questions.length) {
       const questionCount = await questionsCollection.countDocuments();
 
-      if (questionCount > 0) {
-        await questionsCollection.deleteMany({})
-        .then(() => console.log("✅ Success -> Question deleted."))
-        .catch(err => console.error("Failed -> Error while deleting questions.", err));
+      if (questionCount == 0) {
+        questionsCollection.insertMany(questions, { ordered: false })
+          .then(() => console.log("✅ Success -> Question loaded."))
+          .catch(err => console.error("❌ Failed -> Error: Inserting questions failed:", err));
       }
-
-      questionsCollection.insertMany(questions, { ordered: false })
-        .then(() => console.log("✅ Success -> Question loaded."))
-        .catch(err => console.error("❌ Failed -> Error: Inserting questions failed:", err));
     }
 
   } else {
