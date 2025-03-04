@@ -72,7 +72,7 @@ async function LoadQuestions() {
       const questionCount = await questionsCollection.countDocuments();
 
       if (questionCount == 0) {
-        questionsCollection.insertMany(questions, { ordered: false })
+        await questionsCollection.insertMany(questions, { ordered: false })
           .then(() => console.log("✅ Success -> Question loaded."))
           .catch(err => console.error("❌ Failed -> Error: Inserting questions failed:", err));
       }
@@ -90,7 +90,7 @@ async function LoadUsers() {
     const students = JSON.parse(fs.readFileSync(usersPath, "utf8"));
 
     if (students.students?.length) {
-      const studentCount = usersCollection.countDocuments();
+      const studentCount = await usersCollection.countDocuments();
 
       if (studentCount == 0) {
         await usersCollection.insertMany(students.students, { ordered: false })
