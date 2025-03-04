@@ -1,4 +1,4 @@
-require("dotenv").config();
+require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
@@ -38,64 +38,76 @@ let db, usersCollection, questionsCollection, studentScoresCollection, studentAi
 (async () => {
   try {
     await client.connect();
+    console.log("✅ Connected to MongoDB");
     db = client.db("Research");
     usersCollection = db.collection("users");
     questionsCollection = db.collection("questions");
     studentScoresCollection = db.collection("studentScores");
     studentAiUsageCollection = db.collection("studentAiUsage");
     console.log("✅ Connected to MongoDB");
+
+    LoadQuestions();
+    LoadUsers();
   } catch (err) {
     console.error("❌ Failed -> MongoDB Connection Error:", err);
   }
 });
 
 // Laod questions into Database
-const questionsPath = path.join(__dirname, "public", "questions.csv");
-if (fs.existsSync(questionsPath)) {
-  const fileContent = fs.readFileSync(questionsPath, "utf8");
-  let questions = [];
+async function LoadQuestions() {
+  const questionsPath = path.join(__dirname, "public", "questions.csv");
+  if (fs.existsSync(questionsPath)) {
+    const fileContent = fs.readFileSync(questionsPath, "utf8");
+    let questions = [];
 
-  fileContent.split("\n").splice(1).forEach((line) => {
-    const [Id, Question, OptionA, OptionB, OptionC, OptionD, Answer] = line.split(",");
-    
-    if (Id && Question && Answer) {
-      questions.push({ Id: Id.trim(), Question: Question.trim(), Answer: Answer.trim(), OptionA: OptionA.trim(), OptionB: OptionB.trim(), OptionC: OptionC.trim(), OptionD: OptionD.trim() });
+    fileContent.split("\n").splice(1).forEach((line) => {
+      const [Id, Question, OptionA, OptionB, OptionC, OptionD, Answer] = line.split(",");
+
+      if (Id && Question && Answer) {
+        questions.push({ Id: Id.trim(), Question: Question.trim(), Answer: Answer.trim(), OptionA: OptionA.trim(), OptionB: OptionB.trim(), OptionC: OptionC.trim(), OptionD: OptionD.trim() });
+      }
+    });
+
+    if (questions.length) {
+      const questionCount = await questionsCollection.countDocuments();
+
+      if (questionCount > 0) {
+        await questionsCollection.deleteMany({})
+        .then(() => console.log("✅ Success -> Question deleted."))
+        .catch(err => console.error("Failed -> Error while deleting questions.", err));
+      }
+
+      questionsCollection.insertMany(questions, { ordered: false })
+        .then(() => console.log("✅ Success -> Question loaded."))
+        .catch(err => console.error("❌ Failed -> Error: Inserting questions failed:", err));
     }
-  });
 
-  if (questions.length) {
-    questionsCollection.deleteMany({})
-    .then(() => console.log("✅ Success -> Question deleted."))
-    .catch(err => console.error("Failed -> Error while deleting questions.", err));
-
-    questionsCollection.insertMany(questions, { ordered: false })
-    .then(() => console.log("✅ Success -> Question loaded."))
-    .catch(err => console.error("❌ Failed -> Error: Inserting questions failed:", err));
+  } else {
+    console.error("❌ Failed -> Error: questions.csv not found.")
   }
-
-} else {
-  console.error("❌ Failed -> Error: questions.csv not found.")
 }
 
 // Load user into database.
-const usersPath = path.join(__dirname, "public", "users.json");
-if (fs.existsSync(usersPath)) {
-  const students = JSON.parse(fs.readFileSync(usersPath, "utf8"));
-  
-  if (students.students?.length) {
-    usersCollection.deleteMany({})
-    .then(() => console.log("✅ Success -> Users deleted."))
-    .catch(err => console.error("Failed -> Error while deleting users.", err));
+async function LoadUsers() {
+  const usersPath = path.join(__dirname, "public", "users.json");
+  if (fs.existsSync(usersPath)) {
+    const students = JSON.parse(fs.readFileSync(usersPath, "utf8"));
 
-    usersCollection.insertMany(students.students, { ordered: false })
-    .then(() => console.log("✅ Success -> Users loaded."))
-    .catch(err => console.error("❌ Error inserting users:", err));
+    if (students.students?.length) {
+      usersCollection.deleteMany({})
+        .then(() => console.log("✅ Success -> Users deleted."))
+        .catch(err => console.error("Failed -> Error while deleting users.", err));
+
+      usersCollection.insertMany(students.students, { ordered: false })
+        .then(() => console.log("✅ Success -> Users loaded."))
+        .catch(err => console.error("❌ Error inserting users:", err));
+    }
+
+  } else {
+    console.error("❌ Failed -> Error: users.json not found.")
   }
 
-} else {
-  console.error("❌ Failed -> Error: users.json not found.")
 }
-
 // ROUTES START HERE
 
 // Login API -> /login
