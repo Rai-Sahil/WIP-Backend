@@ -147,7 +147,7 @@ app.post("/login", async (req, res) => {
 
 // Questions API -> To GET all the questions
 app.get("/questions", async (_, res) => {
-  const questions = await questionsCollection.find({}, { projection: { Id: 1 } }).toArray();
+  const questions = await questionsCollection.find().toArray();
   res.json({ success: true, questions });
 });
 
