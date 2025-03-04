@@ -11,5 +11,8 @@
     "mongodb": "^6.14.1",
     "openai": "^4.85.4"
   },
-  "type": "commonjs"
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  }
 }
