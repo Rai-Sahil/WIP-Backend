@@ -121,8 +121,8 @@ app.post("/login", async (req, res) => {
   try {
     const student = await usersCollection.findOne({ username });
     const count = await usersCollection.countDocuments();
-    console.log(count)
-    if (student && student.password == password) {
+    console.log(username, password)
+    if (student && student.password === password) {
       const studentScoreRecord = await studentScoresCollection.findOne({ username });
       const studentAiUsageRecord = await studentAiUsageCollection.findOne({ username });
 
