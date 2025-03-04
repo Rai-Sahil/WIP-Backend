@@ -234,7 +234,7 @@ app.get("/ai-usage/:username", async (req, res) => {
   const { username } = req.params;
   
   try {
-    const studentAiUsageRecord = studentAiUsageCollection.findOne({ username });
+    const studentAiUsageRecord = await studentAiUsageCollection.findOne({ username });
     
     if (!studentAiUsageRecord) return res.json({ questionsUsed: 0, questions: [] });
     
@@ -259,7 +259,7 @@ app.get("/score/:username", async (req, res) => {
   const username = req.params.username;
 
   try {
-    const userScore = studentScoresCollection.findOne({ username });
+    const userScore = await studentScoresCollection.findOne({ username });
     res.json({ success: true, score: userScore.score || 0 });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to get score" });
