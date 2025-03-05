@@ -1,5 +1,5 @@
 Id, Question,OptionA,OptionB,OptionC,OptionD,Answer
-0, Which of the following format specifiers should be used to fill the blank, so that the output would be "3.14" double d = 3.14159; printf("___", d);?, %.2f, %f, %2f, %f.2, %.2f
+0, "Which of the following format specifiers should be used to fill the blank so that the output would be "3.14" double d = 3.14159; printf(\"___\", d);?", %.2f, %f, %2f, %f.2, %.2f
 1, What does the \n character do in a printf statement?, Inserts a space, Moves the cursor to the next line, Prints a backslash, Causes a syntax error, Moves the cursor to the next line
 2, What will be the output of the following code? printf("%5d", 12);, "512", "   12", "12   ", Compilation error, "   12"
 3, What will be the output of the following code? int x = 0; if (x = 3) printf("this"); else printf("that");, this, that, thisthat, Compilation error, this
