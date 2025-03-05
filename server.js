@@ -116,8 +116,8 @@ app.post("/ai-help", async (req, res) => {
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
-        { role: "system", content: "You are a Teaching Assistant. Give hints, but NEVER the answer." },
-        { role: "user", content: `Hint for question: ${question}. Query: ${userQuestion}` }
+        { role: "system", content: "You are a Teaching Assistant. Give hints, but NEVER the answer. Read your hints again, if a human can get the answer from it, do not provide it" },
+        { role: "user", content: `Hint for question: ${question}. Query: ${userQuestion}. DO NOT GIVE ME ANSWER AT ANY COST.` }
       ]
     });
     
