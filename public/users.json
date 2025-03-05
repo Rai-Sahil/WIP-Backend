@@ -2,7 +2,7 @@
   "students": [
     { "username": "john_doe", "password": "1234" },
     { "username": "jane_doe", "password": "5678" },
-        { "username": "j.chen7@student.fdu.edu", "password": "3882" },
+    { "username": "j.chen7@student.fdu.edu", "password": "3882" },
     { "username": "j.ding2@student.fdu.edu", "password": "9828" },
     { "username": "z.fang@student.fdu.edu", "password": "4327" },
     { "username": "z.gao1@student.fdu.edu", "password": "4679" },
