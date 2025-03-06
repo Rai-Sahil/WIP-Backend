@@ -113,6 +113,9 @@ app.post("/ai-help", async (req, res) => {
     
     if (studentRecord.questions[question].promptsLeft === 0) return res.status(403).json({ success: false, message: "No more AI prompts left." });
     
+    // If student record history doesnt exist, create it.
+    if (!studentRecord.questions[question].history) studentRecord.questions[question].history = [];
+
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
