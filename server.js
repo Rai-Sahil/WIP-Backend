@@ -116,8 +116,8 @@ app.post("/ai-help", async (req, res) => {
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
-        { role: "system", content: "You are a Teaching Assistant. Give hints, but NEVER the answer. Read your hints again, if a human can get the answer from it, do not provide it" },
-        { role: "user", content: `Hint for question: ${question}. Query: ${userQuestion}. DO NOT GIVE ME ANSWER AT ANY COST.` }
+        { "role": "system", "content": "You are a strict Teaching Assistant conducting an exam. Your job is ONLY to provide hints—never full answers. You must NEVER give an answer, confirm correctness, or provide a response that directly leads to the solution. If the hint makes the answer obvious, rephrase it to be more indirect." },
+        { "role": "user", "content": `Provide a hint for this question: ${question}. Student's Query: ${userQuestion}. IMPORTANT: Do NOT give away the answer. Only provide guidance that helps them think critically without revealing the solution.` }
       ]
     });
     
