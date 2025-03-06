@@ -97,7 +97,7 @@ app.post("/submit", async (req, res) => {
       if (studentAnswer === q.Answer) score++;
     });
 
-    await studentScoresCollection.updateOne({ username }, { $set: { answers: studentAnswerRecord, score, submitted: true } }, { upsert: true });
+    await studentScoresCollection.updateOne({ username }, { $set: { quesitons: questions, answers: studentAnswerRecord, score, submitted: true } }, { upsert: true });
     res.json({ success: true, score });
   } catch (err) {
     console.error("❌ Submission Error:", err);
@@ -120,10 +120,13 @@ app.post("/ai-help", async (req, res) => {
         { "role": "user", "content": `Provide a hint for this question: ${question}. Student's Query: ${userQuestion}. IMPORTANT: Do NOT give away the answer. Only provide guidance that helps them think critically without revealing the solution.` }
       ]
     });
+
+    const hint = response.choices[0].message.content;
+    studentRecord.questions[question].history.push({ userQuestion, hint });
     
     studentRecord.questions[question].promptsLeft--;
     await studentAiUsageCollection.updateOne({ username }, { $set: studentRecord }, { upsert: true });
-    res.json({ success: true, hint: response.choices[0].message.content });
+    res.json({ success: true, hint });
   } catch (err) {
     console.error("❌ AI Help Error:", err);
     res.status(500).json({ success: false, message: "AI error" });
