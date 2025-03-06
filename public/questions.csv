@@ -1,12 +1,12 @@
-Id, Question,OptionA,OptionB,OptionC,OptionD,Answer
-0, "Which of the following format specifiers should be used to fill the blank so that the output would be "3.14" double d = 3.14159; printf(\"___\", d);?", %.2f, %f, %2f, %f.2, %.2f
-1, What does the \n character do in a printf statement?, Inserts a space, Moves the cursor to the next line, Prints a backslash, Causes a syntax error, Moves the cursor to the next line
-2, What will be the output of the following code? printf("%5d", 12);, "512", "   12", "12   ", Compilation error, "   12"
-3, What will be the output of the following code? int x = 0; if (x = 3) printf("this"); else printf("that");, this, that, thisthat, Compilation error, this
-4, What will happen if a recursive function does not have a base case?, It will execute normally., It will cause a syntax error., It will cause infinite recursion., It will execute only once., It will cause infinite recursion.
-5, Which of the following is the correct binary representation of the 0x7A?, 0b11001010, 0b01111010, 0b10101110, 0b11100101, 0b01111010
-6, What is the hexadecimal equivalent of the 0b10101111?, 0xAF, 0xA7, 0xBF, 0xAB, 0xAF
-7,What will be the output of the following code? int arr[2][3] = {{1, 2, 3}, {4, 5, 6}}; printf("%d", arr[0][2] + arr[1][1]);, 5, 6, 7, 8, 8
-8, Which of the following array declarations is INCORRECT?, int x[][6];, int x[][6] = {2, 5, 7, 8, -1, 5};, int x[3][6];, int x[3][6] = {2, 5, 7, 8, -1, 5};, int x[][6];
-9, What is the value of x at the end of the following code? int x; for (x = 0; x < 20; x++) { if (x > 10) break; }, 0, 11, 20, 10, 11
-10, I agree to use my data for research, Yes, No,  ,   , Yes
+Id, Question, OptionA, OptionB, OptionC, OptionD, Answer
+0, "Which of the following format specifiers should be used to fill the blank so that the output would be \"3.14\" double d = 3.14159; printf(\"___\", d);?", "%.2f", "%f", "%2f", "%f.2", "%.2f"
+1, "What does the \\n character do in a printf statement?", "Inserts a space", "Moves the cursor to the next line", "Prints a backslash", "Causes a syntax error", "Moves the cursor to the next line"
+2, "What will be the output of the following code? printf(\"%5d\", 12);", "\"512\"", "\"   12\"", "\"12   \"", "Compilation error", "\"   12\""
+3, "What will be the output of the following code? int x = 0; if (x = 3) printf(\"this\"); else printf(\"that\");", "this", "that", "thisthat", "Compilation error", "this"
+4, "What will happen if a recursive function does not have a base case?", "It will execute normally.", "It will cause a syntax error.", "It will cause infinite recursion.", "It will execute only once.", "It will cause infinite recursion."
+5, "Which of the following is the correct binary representation of the 0x7A?", "0b11001010", "0b01111010", "0b10101110", "0b11100101", "0b01111010"
+6, "What is the hexadecimal equivalent of the 0b10101111?", "0xAF", "0xA7", "0xBF", "0xAB", "0xAF"
+7, "What will be the output of the following code? int arr[2][3] = {{1, 2, 3}, {4, 5, 6}}; printf(\"%d\", arr[0][2] + arr[1][1]);", "5", "6", "7", "8", "8"
+8, "Which of the following array declarations is INCORRECT?", "int x[][6];", "int x[][6] = {2, 5, 7, 8, -1, 5};", "int x[3][6];", "int x[3][6] = {2, 5, 7, 8, -1, 5};", "int x[][6];"
+9, "What is the value of x at the end of the following code? int x; for (x = 0; x < 20; x++) { if (x > 10) break; }", "0", "11", "20", "10", "11"
+10, "I agree to use my data for research", "Yes", "No", "", "", "Yes"
