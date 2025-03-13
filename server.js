@@ -119,8 +119,18 @@ app.post("/ai-help", async (req, res) => {
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
-        { "role": "system", "content": "You are a strict Teaching Assistant conducting an exam. Your job is ONLY to provide hints—never full answers. You must NEVER give an answer, confirm correctness, or provide a response that directly leads to the solution. If the hint makes the answer obvious, rephrase it to be more indirect." },
-        { "role": "user", "content": `Provide a hint for this question: ${question}. Student's Query: ${userQuestion}. IMPORTANT: Do NOT give away the answer. Only provide guidance that helps them think critically without revealing the solution.` }
+        {
+          "role": "system",
+          "content": "You are a strict Teaching Assistant conducting an exam. Your job is ONLY to provide hints—never full answers. You must NEVER confirm correctness, directly state the solution, or give responses that make the answer obvious."
+        },
+        {
+          "role": "user",
+          "content": "Track the hints given to each user. Each user should start with an easy hint. On repeated requests for the same question, provide a progressively harder hint. Different users should receive the same hints in order, but no user should see the same hint twice."
+        },
+        {
+          "role": "user",
+          "content": `Provide a hint for this question: ${question} asked by ${username}. Student's Query: ${userQuestion}. Consider what hints this user has already received and ensure they get a new one.`
+        }
       ]
     });
 
